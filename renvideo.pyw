@@ -734,7 +734,7 @@ def quet_nhac_trong_thu_muc(folder):
 STATE_KEY = {'video': 'ds_video', 'nhac_hay': 'ds_nhac_hay', 'nhac_thuong': 'ds_nhac_thuong', 'nhac_suno': 'ds_nhac_suno',
              'intro': 'file_intro', 'outro': 'file_outro', 'khung': 'file_khung', 'video_don': 'video_don', 'video_auto': 'ds_video'}
 app_state = {
-    'ds_video': [], 'ds_nhac_hay': [], 'ds_nhac_thuong': [], 'ds_nhac_suno': [], 'file_intro': "", 'file_outro': "", 'file_khung': "", 'video_don': "",
+    'ds_video': [], 'ds_nhac_hay': [], 'ds_nhac_thuong': [], 'ds_nhac_suno': [], 'file_intro': "", 'file_outro': "", 'file_khung': "", 'video_don': [],
     'output_dir': os.path.abspath(os.path.join(WORKSPACE_DIR, "Output")),
     'hang_doi': [], 'is_rendering': False
 }
@@ -770,7 +770,7 @@ from urllib.parse import urljoin
 
 APP_VERSION = "8.0.0"
 # Link tới file version.json trên mạng (xem hướng dẫn: GitHub raw / hosting bất kỳ, phải là HTTPS)
-UPDATE_URL = "https://raw.githubusercontent.com/TEN_GITHUB/TEN_REPO/main/version.json"
+UPDATE_URL = "https://raw.githubusercontent.com/duongcamphong/renstudio/main/version.json"
 LAUNCHER_VERSION = int(os.environ.get('RSP_LAUNCHER_VERSION', '999'))   # 999 = chạy từ mã nguồn
 SCRIPT_PATH = os.environ.get('RSP_APP_SCRIPT') or os.path.abspath(__file__)  # file sẽ bị thay khi cập nhật
 
@@ -937,6 +937,23 @@ def main_page():
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #60a5fa; }
         
+        /* ===== KHUNG ỨNG DỤNG CỐ ĐỊNH TRONG CỬA SỔ: tiêu đề trên - nội dung giữa (cuộn riêng từng cột) - thanh nút dưới ===== */
+        html, body { height: 100%; overflow: hidden !important; }
+        .q-layout, .q-page-container, .q-page { height: 100vh !important; min-height: 0 !important; }
+        .nicegui-content { padding: 0 !important; gap: 0 !important; height: 100vh !important; max-height: 100vh;
+            overflow: hidden !important; display: flex !important; flex-direction: column !important;
+            flex-wrap: nowrap !important; align-items: stretch !important; }
+        .rsp-main { flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1500px; margin: 0 auto; display: flex; gap: 18px; padding: 16px 16px 12px; overflow: hidden; }
+        .rsp-col { flex: 1 1 0; min-width: 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-right: 6px; }
+        .rsp-col > * { flex-shrink: 0; }
+        .rsp-queue { flex: 1 0 300px !important; min-height: 300px; }
+        .rsp-log { flex: 0 0 150px !important; }
+        /* Cửa sổ hẹp: 2 cột xếp chồng, cuộn cả vùng giữa; thanh nút dưới vẫn luôn hiện */
+        @media (max-width: 980px) {
+            .rsp-main { flex-direction: column; overflow-y: auto; }
+            .rsp-col { flex: 0 0 auto; overflow: visible; padding-right: 0; }
+            .rsp-queue { flex: 0 0 auto !important; height: 340px; }
+        }
         .q-field__control { background: #0f172a !important; border-radius: 8px !important; }
         .q-field__native { color: #f8fafc !important; font-family: "Inter", sans-serif; font-size: 14px; font-weight: 600;}
         .q-field--outlined .q-field__control:before { border: 1px solid #334155 !important; }
@@ -1015,33 +1032,37 @@ def main_page():
         await asyncio.sleep(1.5)
         khoi_dong_lai_app()
 
-    with ui.row().classes('w-full h-16 bg-[#1e293b] border-b border-[#334155] items-center justify-between px-8 sticky top-0 z-50'):
-        with ui.row().classes('items-center gap-3'):
+    with ui.row().classes('w-full shrink-0 min-h-[56px] py-2 bg-[#1e293b] border-b border-[#334155] items-center justify-between px-4 sm:px-8 gap-2 flex-nowrap'):
+        with ui.row().classes('items-center gap-3 flex-nowrap'):
             ui.icon('rocket_launch', size='sm', color='blue-400')
-            ui.label('RENDER STUDIO PRO').classes('text-lg text-glow')
-        with ui.row().classes('items-center gap-4'):
-            ui.label(f'V{APP_VERSION} (SUNO AI FILLER 🤖)').classes('text-[11px] font-bold tracking-widest px-3 py-1 bg-[#0f172a] text-blue-400 border border-blue-500/30 rounded')
+            ui.label('RENDER STUDIO PRO').classes('text-lg text-glow whitespace-nowrap')
+        with ui.row().classes('items-center gap-3 flex-nowrap'):
+            ui.label(f'V{APP_VERSION} (SUNO AI FILLER 🤖)').classes('hidden md:block text-[11px] font-bold tracking-widest px-3 py-1 bg-[#0f172a] text-blue-400 border border-blue-500/30 rounded whitespace-nowrap')
             btn_update = ui.button('Cập nhật', icon='system_update', on_click=lambda: kiem_tra_cap_nhat_ui(True)).props('unelevated dense no-caps size=sm color=primary').classes('px-3')
             ui.button(icon='close', on_click=tat_phan_mem).props('flat round size="sm"').classes('text-slate-400 hover:bg-red-500/20 hover:text-red-400')
 
-    ui.add_body_html('''
-        <div class="marquee-container">
-            <div class="marquee-content">
-                ✨ RENDER STUDIO PRO V8.0 ✨ ĐÃ THÊM KHO "NHẠC SUNO" DỰ PHÒNG TỰ ĐỘNG ĐẮP BÙ CHO CHẾ ĐỘ "KHÔNG LẶP" ĐỂ ĐẢM BẢO THỜI LƯỢNG ✨ CẬP NHẬT MỚI: TỰ ĐỘNG PHÁT HẾT "NHẠC HAY" RỒI MỚI ĐẾN "NHẠC THƯỜNG" ✨ CHÚC SẾP LÊN XU HƯỚNG TRIỆU VIEW! 🚀
-            </div>
-        </div>
-    ''')
+    with ui.element('div').classes('marquee-container shrink-0'):
+        ui.label('✨ RENDER STUDIO PRO V8.0 ✨ ĐÃ THÊM KHO "NHẠC SUNO" DỰ PHÒNG TỰ ĐỘNG ĐẮP BÙ CHO CHẾ ĐỘ "KHÔNG LẶP" ĐỂ ĐẢM BẢO THỜI LƯỢNG ✨ CẬP NHẬT MỚI: TỰ ĐỘNG PHÁT HẾT "NHẠC HAY" RỒI MỚI ĐẾN "NHẠC THƯỜNG" ✨ CHÚC SẾP LÊN XU HƯỚNG TRIỆU VIEW! 🚀').classes('marquee-content')
 
-    with ui.row().classes('w-full max-w-[1350px] mx-auto mt-6 px-4 gap-6 items-stretch flex-nowrap'):
-        
-        with ui.column().classes('w-[48%] min-w-[500px] gap-6'): 
-            
-            with ui.card().classes('w-full p-6 pro-card flex-col'):
-                ui.label('1. KHO TÀI NGUYÊN').classes('text-xs font-bold text-blue-400 mb-4 tracking-widest uppercase')
-                
-                with ui.row().classes('w-full gap-3 mb-5'):
-                    input_ten = ui.input('Tên Video', value='video1').classes('flex-grow w-2/3').props('dark outlined dense')
-                    lbl_out = ui.input('Thư mục lưu', value=app_state['output_dir']).classes('flex-grow w-1/3').props('dark outlined dense readonly')
+    def tieu_de_buoc(so, tieu_de, mo_ta):
+        with ui.row().classes('items-center gap-3 mb-4 flex-nowrap'):
+            ui.label(str(so)).classes('w-7 h-7 rounded-full bg-blue-500/20 text-blue-300 text-[13px] font-bold flex items-center justify-center shrink-0')
+            with ui.column().classes('gap-0'):
+                ui.label(tieu_de).classes('text-[13px] font-bold text-slate-100 tracking-wide uppercase')
+                ui.label(mo_ta).classes('text-[11px] text-slate-500')
+
+    # Khung ứng dụng: 2 cột (mỗi cột tự cuộn riêng) + thanh nút cố định ở đáy. Cửa sổ hẹp -> xếp chồng 1 cột.
+    with ui.element('div').classes('rsp-main'):
+
+        with ui.element('div').classes('rsp-col custom-scrollbar'):
+
+            with ui.card().classes('w-full p-5 pro-card flex-col'):
+                tieu_de_buoc(1, 'Kho tài nguyên', 'Đặt tên, chọn thư mục lưu, video nền và nhạc')
+
+                input_ten = ui.input('Tên Video', value='video1').classes('w-full mb-3').props('dark outlined dense')
+                with ui.row().classes('w-full gap-2 mb-5 items-center flex-nowrap'):
+                    lbl_out = ui.input('Thư mục lưu', value=app_state['output_dir']).classes('grow min-w-0').props('dark outlined dense readonly')
+                    lbl_out.tooltip('Thư mục chứa video sau khi render')
                     async def pick_out_dir():
                         res = await run.io_bound(get_file_safe_isolated, "Chọn thư mục lưu", "", False, True)
                         if res: app_state['output_dir'] = res; lbl_out.value = res
@@ -1062,13 +1083,15 @@ def main_page():
                         if loai == 'video':
                             res = await run.io_bound(get_file_safe_isolated, "Chọn Video Nền", "*.mp4 *.mov")
                             if res:
-                                app_state['ds_video'] = list(res); app_state['video_don'] = ""; _reset_row('video_don')
+                                app_state['ds_video'] = list(res); app_state['video_don'] = []; _reset_row('video_don')
                                 lbl.text = f"Đã nạp {len(res)} video (gộp thành 1)"; icon_el.classes(replace='text-blue-400')
                         elif loai == 'video_don':
-                            res = await run.io_bound(get_file_safe_isolated, "Chọn 1 Video chạy xuyên suốt", "*.mp4 *.mov", False)
+                            res = await run.io_bound(get_file_safe_isolated, "Chọn 1 hoặc nhiều Video (mỗi video chạy xuyên suốt)", "*.mp4 *.mov")
                             if res:
-                                app_state['video_don'] = res; app_state['ds_video'] = []; _reset_row('video')
-                                lbl.text = f"Xuyên suốt: {os.path.basename(res)}"; icon_el.classes(replace='text-blue-400')
+                                app_state['video_don'] = list(res); app_state['ds_video'] = []; _reset_row('video')
+                                lbl.text = (f"Xuyên suốt: {os.path.basename(res[0])}" if len(res) == 1
+                                            else f"Đã nạp {len(res)} video • mỗi video = 1 dự án riêng")
+                                icon_el.classes(replace='text-blue-400')
                         elif loai == 'nhac_hay':
                             res = await run.io_bound(get_file_safe_isolated, "Chọn Thư Mục Nhạc Ưu Tiên", "", False, True)
                             if res: 
@@ -1101,59 +1124,113 @@ def main_page():
                         if LAST_DIALOG_ERROR:
                             ui.notify(f'Không mở được hộp thoại chọn file: {LAST_DIALOG_ERROR}', type='negative', position='top', timeout=8000)
 
+                def nhom(title, icon_name):
+                    """Khung nhóm: luôn nằm cạnh nhau, chia đều bề ngang và co giãn theo cửa sổ (không xuống hàng)."""
+                    col = ui.column().classes('flex-1 basis-0 min-w-0 gap-2 p-3 rounded-xl border border-[#334155] bg-[#0f172a]/50')
+                    with col:
+                        with ui.row().classes('items-center gap-2 mb-1 flex-nowrap'):
+                            ui.icon(icon_name, size='xs').classes('text-blue-400')
+                            ui.label(title).classes('text-[11px] font-bold text-slate-300 tracking-widest uppercase')
+                    return col
+
                 def media_row(title, type_key, icon_name, is_folder=False):
-                    with ui.row().classes('w-full items-center justify-between p-3 mb-2 list-row'):
-                        with ui.row().classes('items-center gap-3 w-[70%] overflow-hidden'):
-                            ic = ui.icon(icon_name, size='sm').classes('text-slate-500 transition-colors')
-                            with ui.column().classes('gap-0'):
-                                ui.label(title).classes('font-semibold text-[13px] text-slate-100')
-                                lbl_status = ui.label('Chưa có dữ liệu').classes('text-[12px] text-slate-400 truncate')
-                        with ui.row().classes('gap-2'):
-                            btn_chon = ui.button(icon='add').props('flat round color="primary" size="sm"').classes('bg-[#1e293b] border border-[#334155] hover:border-blue-400 hover:bg-blue-500/10')
+                    # Mỗi mục gọn trên 1 dòng: [icon] [tên + trạng thái] [nút chọn] [nút xoá]
+                    with ui.row().classes('w-full items-center gap-3 px-3 py-2 list-row flex-nowrap'):
+                        ic = ui.icon(icon_name, size='sm').classes('text-slate-500 transition-colors shrink-0')
+                        with ui.column().classes('gap-0 grow min-w-0'):
+                            ui.label(title).classes('font-semibold text-[13px] text-slate-100 w-full truncate')
+                            lbl_status = ui.label('Chưa có dữ liệu').classes('text-[11px] text-slate-400 w-full truncate')
+                        with ui.row().classes('gap-1 shrink-0 flex-nowrap'):
+                            btn_chon = ui.button(icon='add').props('flat round color="primary" size="sm"').classes('bg-[#1e293b] border border-[#334155] hover:border-blue-400 hover:bg-blue-500/10').tooltip('Chọn')
                             btn_chon.on_click(lambda tk=type_key, bc=btn_chon, ls=lbl_status, i=ic: pick_file(tk, bc, ls, i))
                             def xoa_file(tk=type_key, ls=lbl_status, i=ic):
                                 key = STATE_KEY.get(tk, tk)
-                                if tk == 'video_auto': app_state['video_don'] = ""
+                                if tk == 'video_auto': app_state['video_don'] = []
                                 app_state[key] = [] if key in ['ds_video', 'ds_nhac_hay', 'ds_nhac_thuong', 'ds_nhac_suno'] else ""; ls.text = "Chưa có dữ liệu"; i.classes(replace='text-slate-500')
-                            ui.button(icon='close').props('flat round color="slate-500" size="sm"').classes('hover:bg-red-500/20 hover:text-red-400').on_click(xoa_file)
+                            ui.button(icon='close').props('flat round color="slate-500" size="sm"').classes('hover:bg-red-500/20 hover:text-red-400').on_click(xoa_file).tooltip('Xoá')
                     row_refs[type_key] = (lbl_status, ic)
                     return lbl_status
 
-                with ui.row().classes('w-full gap-3'):
-                    with ui.column().classes('w-[48%] gap-1'):
-                        def _doi_che_do_video(e):
-                            app_state['video_don'] = ""; app_state['ds_video'] = []; _reset_row('video_auto')
-                        tg_video = ui.toggle({'gop': 'Gộp nhiều video → 1', 'don': '1 video xuyên suốt'}, value='gop', on_change=_doi_che_do_video).props('no-caps dense unelevated size=sm toggle-color=primary').classes('mb-1')
+                with ui.row().classes('w-full gap-3 items-stretch flex-nowrap'):
+                    with nhom('Video nền', 'movie_creation'):
+                        class _CheDoVideo:
+                            value = 'gop'
+                        tg_video = _CheDoVideo()
+                        mode_cards = {}
+                        MODE_INFO = {
+                            'gop': ('Chọn nhiều video, hệ thống ghép nối thành 1 clip nền (có chuyển cảnh).', 'Chọn nhiều video (giữ Ctrl/Shift)'),
+                            'don': ('Chọn 1 hoặc nhiều video. Mỗi video chạy lặp liền mạch (không chuyển cảnh) và thành 1 video riêng trong hàng đợi, đặt tên theo thứ tự.', 'Chọn 1 hoặc nhiều video'),
+                        }
+                        def _ve_lai_che_do():
+                            for k, (card, ic, chk) in mode_cards.items():
+                                active = (tg_video.value == k)
+                                card.classes(replace='grow basis-[120px] min-w-0 gap-1 p-3 rounded-xl cursor-pointer transition-all relative border ' + ('border-blue-400 bg-blue-500/10' if active else 'border-[#334155] bg-[#0f172a] hover:border-slate-500'))
+                                ic.classes(replace='text-blue-400' if active else 'text-slate-500')
+                                chk.set_visibility(active)
+                            lbl_mode_hint.text = MODE_INFO[tg_video.value][0]
+                        def chon_che_do_video(k):
+                            if tg_video.value == k: return
+                            tg_video.value = k
+                            app_state['video_don'] = []; app_state['ds_video'] = []; _reset_row('video_auto')
+                            _ve_lai_che_do()
+                        ui.label('CÁCH DÙNG VIDEO NỀN').classes('text-[10px] font-bold text-slate-400 tracking-wider')
+                        with ui.row().classes('w-full gap-2'):
+                            for _k, _icon, _title, _sub in [('gop', 'view_carousel', 'Gộp nhiều video', 'Ghép thành 1 clip'),
+                                                            ('don', 'repeat_one', 'Video xuyên suốt', 'Mỗi video = 1 dự án')]:
+                                with ui.column().classes('grow basis-[120px] min-w-0 gap-1 p-3 rounded-xl cursor-pointer border border-[#334155] bg-[#0f172a]') as _card:
+                                    _ic = ui.icon(_icon, size='sm').classes('text-slate-500')
+                                    ui.label(_title).classes('text-[12px] font-bold text-slate-100 leading-tight')
+                                    ui.label(_sub).classes('text-[10px] text-slate-400 leading-tight')
+                                    _chk = ui.icon('check_circle', size='xs').classes('absolute top-2 right-2 text-blue-400')
+                                _card.on('click', lambda k=_k: chon_che_do_video(k))
+                                mode_cards[_k] = (_card, _ic, _chk)
+                        lbl_mode_hint = ui.label('').classes('text-[11px] text-slate-500 mb-1 leading-snug')
+                        _ve_lai_che_do()
                         media_row('Video Nền', 'video_auto', 'movie')
                         media_row('Video Intro', 'intro', 'play_circle')
                         media_row('Video Outro', 'outro', 'stop_circle')
                         media_row('Khung PNG (chỉ video nền)', 'khung', 'filter_frames')
-                    with ui.column().classes('w-[48%] gap-1'):
+                    with nhom('Âm nhạc', 'library_music'):
                         media_row('Nhạc Ưu Tiên', 'nhac_hay', 'library_music', True)
                         media_row('Nhạc Phụ', 'nhac_thuong', 'queue_music', True)
                         media_row('Nhạc Suno (Đắp bù)', 'nhac_suno', 'smart_toy', True)
+                        ui.label('Chọn thư mục nhạc (quét cả thư mục con). Phát hết Ưu Tiên → Phụ → Suno đắp bù.').classes('text-[11px] text-slate-500 leading-snug')
 
-            with ui.card().classes('w-full p-6 pro-card'):
-                ui.label('2. THÔNG SỐ RENDER').classes('text-xs font-bold text-blue-400 mb-4 tracking-widest uppercase')
+            with ui.card().classes('w-full p-5 pro-card'):
+                tieu_de_buoc(2, 'Thông số render', 'Chuyển cảnh, tốc độ, chất lượng và độ dài video')
                 
                 with ui.row().classes('w-full gap-3 mb-5'):
-                    sel_hieu_ung = ui.select(['Mờ êm ái', 'Tối thui', 'Chớp sáng', 'Cắt cái rụp'], value='Mờ êm ái', label='Chuyển cảnh').classes('flex-grow w-1/4').props('dark outlined dense')
-                    sel_tg_hieu_ung = ui.select({0.5: '0.5s', 1.0: '1.0s', 1.5: '1.5s', 2.0: '2.0s'}, value=1.0, label='Thời gian').classes('flex-grow w-1/4').props('dark outlined dense')
-                    sel_toc_do = ui.select({0.8: '0.8x (Chậm)', 1.0: '1.0x (Gốc)', 1.2: '1.2x (Nhanh)'}, value=1.0, label='Tốc độ').classes('flex-grow w-1/4').props('dark outlined dense')
-                    sel_chat_luong = ui.select({'5000k': 'Nhẹ (CapCut)', '10000k': 'Nét cao', '20000k': 'Siêu nét'}, value='5000k', label='Chất lượng').classes('flex-grow w-1/4').props('dark outlined dense')
+                    sel_hieu_ung = ui.select(['Mờ êm ái', 'Tối thui', 'Chớp sáng', 'Cắt cái rụp'], value='Mờ êm ái', label='Chuyển cảnh').classes('grow basis-[130px] min-w-0').props('dark outlined dense')
+                    sel_tg_hieu_ung = ui.select({0.5: '0.5s', 1.0: '1.0s', 1.5: '1.5s', 2.0: '2.0s'}, value=1.0, label='Thời gian').classes('grow basis-[130px] min-w-0').props('dark outlined dense')
+                    sel_toc_do = ui.select({0.8: '0.8x (Chậm)', 1.0: '1.0x (Gốc)', 1.2: '1.2x (Nhanh)'}, value=1.0, label='Tốc độ').classes('grow basis-[130px] min-w-0').props('dark outlined dense')
+                    sel_chat_luong = ui.select({'5000k': 'Nhẹ (CapCut)', '10000k': 'Nét cao', '20000k': 'Siêu nét'}, value='5000k', label='Chất lượng').classes('grow basis-[130px] min-w-0').props('dark outlined dense')
 
-                with ui.row().classes('w-full items-center justify-between mb-5 pt-5 border-t border-[#334155]'):
-                    with ui.row().classes('items-center gap-1'):
-                        ui.label('Độ dài từ').classes('font-medium text-slate-300 mr-1 text-[13px]')
-                        input_tu = ui.number(value=20, min=0, format='%d').classes('w-16').props('dark outlined dense input-class="font-semibold text-[15px] text-white"')
-                        ui.label('đến').classes('text-slate-300 text-[13px] mx-1')
-                        input_den = ui.number(value=30, min=0, format='%d').classes('w-16').props('dark outlined dense input-class="font-semibold text-[15px] text-white"')
-                        ui.label('phút').classes('text-slate-300 text-[13px] ml-1')
-                        
-                        sel_che_do_nhac = ui.select(['Lặp vô tận', 'Không lặp (Báo lỗi)'], value='Lặp vô tận').classes('w-40 ml-4').props('dark outlined dense')
+                with ui.column().classes('w-full mb-5 pt-5 border-t border-[#334155] gap-3'):
+                    with ui.column().classes('gap-0'):
+                        ui.label('ĐỘ DÀI VIDEO').classes('text-[12px] font-bold text-slate-200 tracking-wider')
+                        ui.label('Chọn cách quyết định độ dài của mỗi video').classes('text-[11px] text-slate-500')
+
+                    dur_mode = {'value': 'khoang'}
+                    nhac_cache = {'key': None, 'giay': 0, 'dang_tinh': False}
+                    dur_cards = {}
+
+                    def _tong_giay(p_el, g_el):
+                        try: p = max(0, int(p_el.value or 0))
+                        except Exception: p = 0
+                        try: g = max(0, int(g_el.value or 0))
+                        except Exception: g = 0
+                        return p * 60 + g
+
+                    def _fmt_mmss(total):
+                        h, rest = divmod(int(total), 3600)
+                        m, s = divmod(rest, 60)
+                        return f"{h}:{m:02d}:{s:02d}" if h else f"{m:02d}:{s:02d}"
+
+                    def _ds_nhac_tat_ca():
+                        return app_state['ds_nhac_hay'] + app_state['ds_nhac_thuong'] + app_state.get('ds_nhac_suno', [])
 
                     def lay_do_dai():
-                        all_songs = app_state['ds_nhac_hay'] + app_state['ds_nhac_thuong'] + app_state.get('ds_nhac_suno', [])
+                        all_songs = _ds_nhac_tat_ca()
                         tong = 0
                         loi = []
                         for f in all_songs:
@@ -1162,97 +1239,241 @@ def main_page():
                                 tong += dur
                             else:
                                 loi.append(os.path.basename(f))
-                        
+
                         if loi:
                             msg = f"{loi[0]}" if len(loi) == 1 else f"{loi[0]} và {len(loi)-1} bài khác"
                             print(f"⚠️ Phát hiện {len(loi)} bài nhạc hỏng (Đã tự động bỏ qua): {msg}")
-                            
+
                         if tong == 0 and all_songs:
                             raise Exception("Tất cả nhạc đều hỏng!")
-                            
+
                         return tong
 
-                    async def auto_tinh_gio(btn):
-                        if not app_state['ds_nhac_hay'] and not app_state['ds_nhac_thuong'] and not app_state.get('ds_nhac_suno', []):
-                            ui.notify('Vui lòng chọn nhạc trước!', type='warning')
-                            return
-                        btn.disable()
-                        btn.text = 'Đang tính...'
-                        try:
-                            tong_giay = await run.io_bound(lay_do_dai)
-                            tong_phut = int(tong_giay // 60)
-                            input_den.value = tong_phut
-                            if (input_tu.value or 0) > tong_phut: input_tu.value = tong_phut
-                            ui.notify(f'Đã khớp nhạc: tổng {tong_phut} phút (đặt làm mức tối đa).', type='positive')
-                        except Exception as e:
-                            ui.notify(f"❌ {str(e)}", type='negative', position='top', timeout=8000)
-                            print(f"🚨 [LỖI TÍNH NHẠC]: {str(e)}")
-                        finally:
-                            btn.text = 'Khớp nhạc'
-                            btn.enable()
+                    def cap_nhat_tom_tat(*_):
+                        # tự đổi giây >= 60 thành phút (vd 90 giây -> 1 phút 30 giây)
+                        for p_el, g_el in ((min_phut, min_giay), (max_phut, max_giay)):
+                            try: g = int(g_el.value or 0)
+                            except Exception: g = 0
+                            if g >= 60 or g < 0:
+                                try: p = int(p_el.value or 0)
+                                except Exception: p = 0
+                                extra, g_new = divmod(g, 60)
+                                p_el.value = max(0, p + extra)
+                                g_el.value = g_new
+                        lo, hi = _tong_giay(min_phut, min_giay), _tong_giay(max_phut, max_giay)
+                        if lo > hi: lo, hi = hi, lo
+                        if hi == 0:
+                            lbl_tom_tat.text = 'Không giới hạn: video chạy hết toàn bộ nhạc đã nạp'
+                        elif lo == hi:
+                            lbl_tom_tat.text = f'Mỗi video dài đúng {_fmt_mmss(lo)} (phút:giây)'
+                        else:
+                            lbl_tom_tat.text = f'Mỗi video dài ngẫu nhiên từ {_fmt_mmss(lo)} đến {_fmt_mmss(hi)} (phút:giây)'
 
-                    ui.button('Khớp nhạc', icon='sync', on_click=lambda e: auto_tinh_gio(e.sender)).props('outline size="sm" color="primary"').classes('py-2 border-[#334155]')
+                    NUM_PROPS = 'dark outlined dense input-class="text-center font-bold text-[16px] text-white"'
+
+                    def o_thoi_gian(tieu_de, mo_ta, icon_name, icon_color, phut, giay):
+                        with ui.column().classes('grow basis-[240px] min-w-0 gap-2 p-3 list-row'):
+                            with ui.row().classes('items-center gap-2'):
+                                ui.icon(icon_name, size='xs').classes(icon_color)
+                                with ui.column().classes('gap-0'):
+                                    ui.label(tieu_de).classes('text-[12px] font-bold text-slate-100')
+                                    ui.label(mo_ta).classes('text-[10px] text-slate-500')
+                            with ui.row().classes('items-center gap-2 flex-nowrap'):
+                                p_el = ui.number(value=phut, min=0, max=999, step=1, format='%d', on_change=cap_nhat_tom_tat).classes('grow basis-[90px] min-w-[80px]').props(NUM_PROPS + ' suffix="phút"')
+                                ui.label(':').classes('text-slate-400 font-bold')
+                                g_el = ui.number(value=giay, min=0, max=59, step=1, format='%d', on_change=cap_nhat_tom_tat).classes('grow basis-[90px] min-w-[80px]').props(NUM_PROPS + ' suffix="giây"')
+                        return p_el, g_el
+
+                    def _ve_lai_dur_mode():
+                        for k, (card, ic, chk) in dur_cards.items():
+                            active = (dur_mode['value'] == k)
+                            card.classes(replace='flex-1 basis-0 min-w-0 gap-1 p-3 rounded-xl cursor-pointer transition-all relative border ' + ('border-blue-400 bg-blue-500/10' if active else 'border-[#334155] bg-[#0f172a] hover:border-slate-500'))
+                            ic.classes(replace='text-blue-400' if active else 'text-slate-500')
+                            chk.set_visibility(active)
+                        panel_khoang.set_visibility(dur_mode['value'] == 'khoang')
+                        panel_nhac.set_visibility(dur_mode['value'] == 'nhac')
+
+                    async def tinh_nhac(force=True):
+                        """Tính tổng thời lượng toàn bộ nhạc đã nạp (chạy nền, có lưu tạm để không tính lại khi nhạc không đổi)."""
+                        ds = _ds_nhac_tat_ca()
+                        key = tuple(ds)
+                        if not ds:
+                            nhac_cache.update(key=key, giay=0)
+                            lbl_nhac_tong.text = '--:--'
+                            lbl_nhac_chi_tiet.text = 'Chưa nạp nhạc. Hãy chọn thư mục nhạc ở khung ÂM NHẠC.'
+                            return 0
+                        if not force and nhac_cache['key'] == key and nhac_cache['giay'] > 0:
+                            return nhac_cache['giay']
+                        if nhac_cache['dang_tinh']:
+                            return 0
+                        nhac_cache['dang_tinh'] = True
+                        btn_tinh_nhac.disable()
+                        lbl_nhac_chi_tiet.text = 'Đang tính thời lượng nhạc...'
+                        try:
+                            giay = await run.io_bound(lay_do_dai)
+                        except Exception as e:
+                            lbl_nhac_tong.text = '--:--'
+                            lbl_nhac_chi_tiet.text = f'❌ {e}'
+                            print(f"🚨 [LỖI TÍNH NHẠC]: {e}")
+                            return 0
+                        finally:
+                            nhac_cache['dang_tinh'] = False
+                            btn_tinh_nhac.enable()
+                        nhac_cache.update(key=key, giay=giay)
+                        lbl_nhac_tong.text = _fmt_mmss(giay)
+                        lbl_nhac_chi_tiet.text = (f"{len(ds)} bài  •  Ưu Tiên {len(app_state['ds_nhac_hay'])}  •  Phụ {len(app_state['ds_nhac_thuong'])}"
+                                                  f"  •  Suno {len(app_state.get('ds_nhac_suno', []))}")
+                        return giay
+
+                    async def chon_dur_mode(k):
+                        if dur_mode['value'] != k:
+                            dur_mode['value'] = k
+                            _ve_lai_dur_mode()
+                        if k == 'nhac':
+                            await tinh_nhac(force=False)
+
+                    async def _theo_doi_nhac():
+                        # đang ở chế độ "Khớp theo nhạc" mà người dùng đổi nhạc -> tự tính lại
+                        if dur_mode['value'] == 'nhac' and not nhac_cache['dang_tinh'] and tuple(_ds_nhac_tat_ca()) != nhac_cache['key']:
+                            await tinh_nhac(force=True)
+
+                    with ui.row().classes('w-full gap-2 flex-nowrap'):
+                        for _k, _icon, _title, _sub in [('khoang', 'tune', 'Tự chọn khoảng', 'Ngẫu nhiên từ … đến …'),
+                                                        ('nhac', 'music_note', 'Khớp theo nhạc', 'Dài bằng toàn bộ nhạc đã nạp')]:
+                            with ui.column().classes('flex-1 basis-0 min-w-0 gap-1 p-3 rounded-xl cursor-pointer border border-[#334155] bg-[#0f172a]') as _card:
+                                _ic = ui.icon(_icon, size='sm').classes('text-slate-500')
+                                ui.label(_title).classes('text-[12px] font-bold text-slate-100 leading-tight')
+                                ui.label(_sub).classes('text-[10px] text-slate-400 leading-tight')
+                                _chk = ui.icon('check_circle', size='xs').classes('absolute top-2 right-2 text-blue-400')
+                            _card.on('click', lambda k=_k: chon_dur_mode(k))
+                            dur_cards[_k] = (_card, _ic, _chk)
+
+                    # ---------- Chế độ 1: tự chọn khoảng ----------
+                    panel_khoang = ui.column().classes('w-full gap-3')
+                    with panel_khoang:
+                        ui.label('Mỗi video được chọn ngẫu nhiên một độ dài nằm trong khoảng bên dưới').classes('text-[11px] text-slate-500')
+                        with ui.row().classes('w-full gap-3 items-stretch'):
+                            min_phut, min_giay = o_thoi_gian('Ngắn nhất', 'Độ dài tối thiểu', 'south', 'text-emerald-400', 20, 0)
+                            max_phut, max_giay = o_thoi_gian('Dài nhất', 'Độ dài tối đa', 'north', 'text-amber-400', 30, 0)
+
+                        with ui.row().classes('w-full items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20 flex-nowrap'):
+                            ui.icon('schedule', size='xs').classes('text-blue-400')
+                            lbl_tom_tat = ui.label('').classes('text-[12px] font-semibold text-blue-300')
+                        cap_nhat_tom_tat()
+
+                        sel_che_do_nhac = ui.select(['Lặp vô tận', 'Không lặp (Báo lỗi)'], value='Lặp vô tận', label='Khi nhạc ngắn hơn độ dài video').classes('w-full').props('dark outlined dense')
+                        ui.label('Lặp vô tận: nhạc tự phát lại cho đủ độ dài  •  Không lặp: chỉ dùng nhạc đã có (thiếu sẽ đắp bằng Nhạc Suno hoặc báo lỗi)').classes('text-[11px] text-slate-500 -mt-2')
+
+                    # ---------- Chế độ 2: khớp theo nhạc ----------
+                    panel_nhac = ui.column().classes('w-full gap-3')
+                    with panel_nhac:
+                        with ui.row().classes('w-full items-center gap-4 p-4 list-row flex-nowrap'):
+                            ui.icon('music_note', size='md').classes('text-pink-400 shrink-0')
+                            with ui.column().classes('gap-0 grow min-w-0'):
+                                ui.label('Tổng thời lượng nhạc').classes('text-[11px] text-slate-400')
+                                lbl_nhac_tong = ui.label('--:--').classes('text-2xl font-bold text-white font-mono')
+                                lbl_nhac_chi_tiet = ui.label('Chưa tính').classes('text-[11px] text-slate-400 truncate w-full')
+                            btn_tinh_nhac = ui.button('Tính lại', icon='refresh', on_click=lambda: tinh_nhac(force=True)).props('outline no-caps size="sm" color="primary"').classes('shrink-0 border-[#334155]')
+                        ui.label('Mỗi video dài đúng bằng tổng nhạc: phát hết Ưu Tiên → Phụ → Suno, không lặp và không bị cắt giữa bài. Đổi nhạc thì thời lượng tự cập nhật.').classes('text-[11px] text-slate-500 leading-snug')
+
+                    _ve_lai_dur_mode()
+                    ui.timer(1.5, _theo_doi_nhac)
 
                 async def add_to_queue():
                     if not (app_state['ds_video'] or app_state.get('video_don')) or (not app_state['ds_nhac_hay'] and not app_state['ds_nhac_thuong'] and not app_state.get('ds_nhac_suno', [])):
                         ui.notify('Lỗi: Thiếu Video nền hoặc Nhạc!', type='negative')
                         return
                     
-                    t_min, t_max = float(input_tu.value or 0), float(input_den.value or 0)
-                    if t_min > t_max: t_min, t_max = t_max, t_min
-                    lo, hi = int(t_min * 60), int(t_max * 60)
-                    t_secs = random.randint(lo, hi) if hi > 0 else 0
-                    
-                    if 'Không lặp' in sel_che_do_nhac.value and t_secs > 0:
-                        ui.notify('Đang đối chiếu thời gian nhạc...', type='info')
-                        try:
-                            tong_giay = await run.io_bound(lay_do_dai)
-                        except Exception as e:
-                            ui.notify(f"❌ KHÔNG THỂ THÊM: {str(e)}", type='negative', position='top', timeout=8000)
+                    # --- Danh sách dự án cần tạo: chế độ xuyên suốt => MỖI video 1 dự án; chế độ gộp => 1 dự án chung ---
+                    ds_don = list(app_state.get('video_don') or [])
+                    ds_cac_du_an = [[v] for v in ds_don] if ds_don else [app_state['ds_video'].copy()]
+                    so_du_an = len(ds_cac_du_an)
+                    che_do_video_dung = 'xuyen_suot' if ds_don else 'gop'
+
+                    che_do_nhac_dung = sel_che_do_nhac.value
+                    tong_giay_nhac = None
+                    lo = hi = 0
+                    if dur_mode['value'] == 'nhac':
+                        # KHỚP THEO NHẠC: video dài đúng bằng tổng toàn bộ nhạc, phát hết không lặp
+                        tong_giay_nhac = await tinh_nhac(force=False)
+                        if not tong_giay_nhac:
+                            ui.notify('Không tính được thời lượng nhạc. Hãy kiểm tra lại thư mục nhạc.', type='negative', position='top', timeout=6000)
                             return
-                            
-                        if lo > tong_giay:
-                            ui.notify(f'Cảnh báo: Thời gian tối thiểu ({lo}s) vượt quá tổng thời lượng Nhạc ({int(tong_giay)}s).', type='negative', position='top', timeout=5000)
-                            return
-                        t_secs = random.randint(lo, max(lo, min(hi, int(tong_giay))))
+                        che_do_nhac_dung = 'Không lặp (Báo lỗi)'
+                    else:
+                        lo, hi = _tong_giay(min_phut, min_giay), _tong_giay(max_phut, max_giay)
+                        if lo > hi: lo, hi = hi, lo
+                        if 'Không lặp' in sel_che_do_nhac.value and hi > 0:
+                            ui.notify('Đang đối chiếu thời gian nhạc...', type='info')
+                            try:
+                                tong_giay_nhac = await run.io_bound(lay_do_dai)
+                            except Exception as e:
+                                ui.notify(f"❌ KHÔNG THỂ THÊM: {str(e)}", type='negative', position='top', timeout=8000)
+                                return
+                            if lo > tong_giay_nhac:
+                                ui.notify(f'Cảnh báo: Thời gian tối thiểu ({lo}s) vượt quá tổng thời lượng Nhạc ({int(tong_giay_nhac)}s).', type='negative', position='top', timeout=5000)
+                                return
 
-                    du_an = {
-                        "ten_file": input_ten.value or "video1",
-                        "ds_video": ([app_state['video_don']] if app_state.get('video_don') else app_state['ds_video'].copy()),
-                        "che_do_video": 'xuyen_suot' if app_state.get('video_don') else 'gop',
-                        
-                        "ds_nhac_hay": app_state['ds_nhac_hay'].copy(),
-                        "ds_nhac_thuong": app_state['ds_nhac_thuong'].copy(),
-                        "ds_nhac_suno": app_state.get('ds_nhac_suno', []).copy(),
-                        "file_intro": app_state.get('file_intro', ""), "file_outro": app_state.get('file_outro', ""),
-                        "file_khung": app_state.get('file_khung', ""),
-                        "target_seconds": t_secs, "output_dir": app_state['output_dir'],
-                        "hieu_ung": sel_hieu_ung.value, "tg_hieu_ung": sel_tg_hieu_ung.value,
-                        "v_speed": sel_toc_do.value,
-                        "che_do_nhac": sel_che_do_nhac.value,
-                        "chat_luong": sel_chat_luong.value,
-                        "trang_thai": "Chờ xử lý", "color": "slate-400", "progress": 0
-                    }
-                    app_state['hang_doi'].append(du_an); ve_lai_hang_doi()
-                    try:
-                        t = du_an['ten_file']
-                        prefix_name = t.rstrip('0123456789')
-                        if prefix_name != t:
-                            num = int(t[len(prefix_name):])
-                            input_ten.value = f"{prefix_name}{num + 1}"
-                    except: pass
+                    def chon_t_secs():
+                        if dur_mode['value'] == 'nhac':
+                            return int(math.ceil(tong_giay_nhac))
+                        if hi <= 0:
+                            return 0
+                        top = hi if tong_giay_nhac is None else max(lo, min(hi, int(tong_giay_nhac)))
+                        return random.randint(lo, top)
 
-                ui.button('THÊM VÀO HÀNG ĐỢI RENDER', icon='playlist_add', on_click=add_to_queue).classes('w-full h-[45px] rounded-lg btn-main') 
+                    # --- Đặt tên theo thứ tự: video1, video2, video3... (tăng số cuối của tên bạn đặt) ---
+                    ten_goc = (input_ten.value or "video1").strip() or "video1"
+                    prefix_name = ten_goc.rstrip('0123456789')
+                    co_so = prefix_name != ten_goc
+                    so_bat_dau = 1
+                    if co_so:
+                        try: so_bat_dau = int(ten_goc[len(prefix_name):])
+                        except Exception: co_so = False
 
-        with ui.column().classes('flex-grow w-[50%] min-w-[500px] gap-6'): 
-            
-            with ui.card().classes('w-full pro-card flex-1 p-0 flex flex-col h-[400px] overflow-hidden'):
-                with ui.row().classes('w-full px-6 py-4 border-b border-[#334155] items-center justify-between bg-[#1e293b] shrink-0'):
+                    ten_da_them = []
+                    for idx, ds_v in enumerate(ds_cac_du_an):
+                        if co_so: ten = f"{prefix_name}{so_bat_dau + idx}"
+                        elif so_du_an > 1: ten = f"{ten_goc}{idx + 1}"
+                        else: ten = ten_goc
+                        du_an = {
+                            "ten_file": ten,
+                            "ds_video": ds_v,
+                            "che_do_video": che_do_video_dung,
+
+                            "ds_nhac_hay": app_state['ds_nhac_hay'].copy(),
+                            "ds_nhac_thuong": app_state['ds_nhac_thuong'].copy(),
+                            "ds_nhac_suno": app_state.get('ds_nhac_suno', []).copy(),
+                            "file_intro": app_state.get('file_intro', ""), "file_outro": app_state.get('file_outro', ""),
+                            "file_khung": app_state.get('file_khung', ""),
+                            "target_seconds": chon_t_secs(), "output_dir": app_state['output_dir'],
+                            "hieu_ung": sel_hieu_ung.value, "tg_hieu_ung": sel_tg_hieu_ung.value,
+                            "v_speed": sel_toc_do.value,
+                            "che_do_nhac": che_do_nhac_dung,
+                            "chat_luong": sel_chat_luong.value,
+                            "trang_thai": "Chờ xử lý", "color": "slate-400", "progress": 0
+                        }
+                        app_state['hang_doi'].append(du_an)
+                        ten_da_them.append(ten)
+                    ve_lai_hang_doi()
+
+                    # tên cho lần thêm tiếp theo
+                    if co_so: input_ten.value = f"{prefix_name}{so_bat_dau + so_du_an}"
+                    elif so_du_an > 1: input_ten.value = f"{ten_goc}{so_du_an + 1}"
+                    if so_du_an > 1:
+                        ui.notify(f'Đã thêm {so_du_an} video vào hàng đợi: {ten_da_them[0]} → {ten_da_them[-1]}', type='positive', position='top')
+
+                ui.button('THÊM VÀO HÀNG ĐỢI RENDER', icon='playlist_add', on_click=add_to_queue).classes('w-full h-[45px] rounded-lg btn-main')
+
+        with ui.element('div').classes('rsp-col custom-scrollbar'):
+
+            with ui.card().classes('w-full pro-card p-0 flex flex-col overflow-hidden rsp-queue'):
+                with ui.row().classes('w-full px-4 sm:px-6 py-3 gap-2 border-b border-[#334155] items-center justify-between bg-[#1e293b] shrink-0'):
                     with ui.row().classes('items-center gap-2'):
                         ui.icon('format_list_bulleted', size='sm', color='slate-400')
                         ui.label('DANH SÁCH RENDER').classes('text-xs font-bold text-blue-400 tracking-widest uppercase')
                     with ui.row().classes('items-center gap-4'):
-                        sel_parallel = ui.select(options={1: '1 Luồng', 2: '2 Luồng (Chuẩn)', 3: '3 Luồng', 4: '4 Luồng (Vắt kiệt)'}, value=2).props('dark outlined dense borderless').classes('w-36 text-[13px] font-semibold text-slate-200')
+                        sel_parallel = ui.select(options={1: '1 Luồng', 2: '2 Luồng (Chuẩn)', 3: '3 Luồng', 4: '4 Luồng (Vắt kiệt)'}, value=2).props('dark outlined dense borderless').classes('w-[200px] min-w-[170px] text-[13px] font-semibold text-slate-200')
                         ui.button('XÓA TẤT CẢ', on_click=lambda: [app_state['hang_doi'].clear(), ve_lai_hang_doi()]).props('flat color="red-400" size="sm"').classes('hover:bg-red-500/10 font-medium')
 
                 with ui.column().classes('w-full px-5 pt-3 pb-1 gap-1 bg-[#1e293b] border-b border-[#334155] shrink-0'):
@@ -1333,49 +1554,50 @@ def main_page():
                 ui.timer(5, lambda: kiem_tra_cap_nhat_ui(False), once=True)
                 ui.timer(0.3, _drain_log_queue)
 
+                async def xu_ly_render_batch():
+                    if not app_state['hang_doi']: return
+                    if app_state.get('is_rendering', False): return 
+                    
+                    app_state['is_rendering'] = True
+                    ve_lai_hang_doi() 
+                    btn_start.disable()
+                    btn_start.text = 'HỆ THỐNG ĐANG XỬ LÝ...'
+                    
+                    max_w = sel_parallel.value
+                    def thread_worker():
+                        with concurrent.futures.ThreadPoolExecutor(max_workers=max_w) as executor:
+                            futures = []
+                            for i, du_an in enumerate(app_state['hang_doi']):
+                                if "Hoàn thành" in du_an["trang_thai"]: continue 
+                                future = executor.submit(
+                                    render_du_an_cach_ly, du_an["ten_file"], du_an["ds_video"], 
+                                    du_an.get("ds_nhac_hay", []), du_an.get("ds_nhac_thuong", []), du_an.get("ds_nhac_suno", []),
+                                    du_an["file_intro"], du_an["file_outro"], 
+                                    du_an["target_seconds"], du_an["output_dir"], du_an["hieu_ung"], du_an["tg_hieu_ung"], 
+                                    du_an.get("v_speed", 1.0), du_an.get("che_do_nhac", "Lặp vô tận"), du_an.get("chat_luong", "5000k"), update_status, i,
+                                    file_khung=du_an.get("file_khung", ""), che_do_video=du_an.get("che_do_video", "gop")
+                                )
+                                futures.append(future)
+                            
+                            for future in concurrent.futures.as_completed(futures):
+                                try: future.result()
+                                except Exception as exc: print(f"\n[LỖI TIẾN TRÌNH NGẦM]: {exc}\n")
+
+                    try:
+                        await run.io_bound(thread_worker)
+                        ui.notify('Hoàn tất toàn bộ hàng đợi!', type='positive', position='top-right')
+                    except Exception as e: print(f"LỖI PHẦN MỀM: {e}")
+                    finally:
+                        app_state['is_rendering'] = False
+                        btn_start.enable()
+                        btn_start.text = 'BẮT ĐẦU XỬ LÝ'
+                        ve_lai_hang_doi()
+
+
                 with ui.row().classes('w-full p-4 border-t border-[#334155] bg-[#1e293b] shrink-0'):
-                    async def xu_ly_render_batch():
-                        if not app_state['hang_doi']: return
-                        if app_state.get('is_rendering', False): return 
-                        
-                        app_state['is_rendering'] = True
-                        ve_lai_hang_doi() 
-                        btn_start.disable()
-                        btn_start.text = 'HỆ THỐNG ĐANG XỬ LÝ...'
-                        
-                        max_w = sel_parallel.value
-                        def thread_worker():
-                            with concurrent.futures.ThreadPoolExecutor(max_workers=max_w) as executor:
-                                futures = []
-                                for i, du_an in enumerate(app_state['hang_doi']):
-                                    if "Hoàn thành" in du_an["trang_thai"]: continue 
-                                    future = executor.submit(
-                                        render_du_an_cach_ly, du_an["ten_file"], du_an["ds_video"], 
-                                        du_an.get("ds_nhac_hay", []), du_an.get("ds_nhac_thuong", []), du_an.get("ds_nhac_suno", []),
-                                        du_an["file_intro"], du_an["file_outro"], 
-                                        du_an["target_seconds"], du_an["output_dir"], du_an["hieu_ung"], du_an["tg_hieu_ung"], 
-                                        du_an.get("v_speed", 1.0), du_an.get("che_do_nhac", "Lặp vô tận"), du_an.get("chat_luong", "5000k"), update_status, i,
-                                        file_khung=du_an.get("file_khung", ""), che_do_video=du_an.get("che_do_video", "gop")
-                                    )
-                                    futures.append(future)
-                                
-                                for future in concurrent.futures.as_completed(futures):
-                                    try: future.result()
-                                    except Exception as exc: print(f"\n[LỖI TIẾN TRÌNH NGẦM]: {exc}\n")
-
-                        try:
-                            await run.io_bound(thread_worker)
-                            ui.notify('Hoàn tất toàn bộ hàng đợi!', type='positive', position='top-right')
-                        except Exception as e: print(f"LỖI PHẦN MỀM: {e}")
-                        finally:
-                            app_state['is_rendering'] = False
-                            btn_start.enable()
-                            btn_start.text = 'BẮT ĐẦU XỬ LÝ'
-                            ve_lai_hang_doi()
-
                     btn_start = ui.button('BẮT ĐẦU XỬ LÝ', icon='play_arrow', on_click=xu_ly_render_batch).classes('w-full h-[45px] rounded-lg btn-main')
 
-            with ui.card().classes('w-full h-[160px] p-0 pro-card flex flex-col overflow-hidden'):
+            with ui.card().classes('w-full p-0 pro-card flex flex-col overflow-hidden rsp-log'):
                 with ui.row().classes('w-full px-5 py-2 bg-[#1e293b] border-b border-[#334155] items-center justify-between'):
                     ui.label('SYSTEM LOG').classes('text-[11px] font-bold text-slate-400 tracking-wider')
                 
